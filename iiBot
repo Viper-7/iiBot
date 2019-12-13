@@ -1,0 +1,13 @@
+#!/bin/dash
+
+base_dir=$(pwd)
+
+killall /bin/bash
+killall tail
+
+for pid in $(ps axo pid o command | grep tail | grep "n 1 -f" | awk '{print $1}'); do kill $pid; done
+for pid in $(ps axo pid o command | grep /bin/bash | grep $base_dir | awk '{print $1}'); do kill $pid; done
+
+for cfile in $(ls $base_dir/channels); do
+	$base_dir/channels/$cfile &
+done

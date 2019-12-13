@@ -1,0 +1,37 @@
+#!/bin/bash
+
+CHAN="$2"
+outfile="$IIBOT_DIR/scripts/user/python/$3"
+user="$1"
+cmparg=$(echo "$3" | tr -d ' ')
+
+if [ "$cmparg" == "" ]; then
+	echo "Usage: @makepython <command> -::- Captures your text into a script named <command>"
+else
+	if [ "$user" == "Viper-7" ]; then
+		echo "Now capturing from $user to $3. End with # on a blank line" >> $CHAN/in
+		
+		tail -n 1 -f $CHAN/out | while read sline
+		do
+			name=$(echo "$sline" | cut -f 3 -d ' ' | sed 's,<\(.*\)>,\1,')
+			cmd=$(echo "$sline" | cut -f 4 -d ' ')
+			char=${cmd:0:1}
+			cmd=${cmd:1}
+			text=$(echo "$sline" | cut -f 4- -d ' ')
+			
+			if [ "$char" == '#' ]; then
+				echo "Wrote @$3"
+				chmod 755 $outfile
+				break;break;
+			else
+				if [ "$char" != '@' ]; then
+					if [ "$user" == "$name" ]; then
+							echo "$text" >> $outfile
+					fi
+				fi
+			fi
+		done
+	else
+		echo "Unauthorized."
+	fi
+fi

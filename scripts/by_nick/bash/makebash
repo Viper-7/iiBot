@@ -1,0 +1,40 @@
+#!/bin/bash
+
+CHAN="$2"
+outfile="$IIBOT_DIR/scripts/user/bash/$3"
+nick="$1"
+user=$(echo "$1" | tr "[:upper:]" "[:lower:]")
+cmparg=$(echo "$3" | tr -d ' ')
+
+if [ "$cmparg" == "" ]; then
+	echo "Usage: @makebash <command> -::- Captures your text into a script named <command>"
+else
+	if [ "$user" == "viper-7" ]; then
+		echo "/PRIVMSG $nick Now capturing from $user to $3. End with # on a blank line" >> $IIBOT_IIFS_SERVER_DIR/in
+		
+		echo '#!/bin/bash' > $outfile
+		
+		tail -n 1 -f $IIBOT_IIFS_SERVER_DIR/$user/out | while read sline
+		do
+			name=$(echo "$sline" | cut -f 3 -d ' ' | sed 's,<\(.*\)>,\1,')
+			cmd=$(echo "$sline" | cut -f 4 -d ' ')
+			char=${cmd:0:1}
+			cmd=${cmd:1}
+			text=$(echo "$sline" | cut -f 4- -d ' ')
+			
+			if [ "$char" == '#' ]; then
+				echo "/PRIVMSG $nick, Wrote @$3" >> $IIBOT_IIFS_SERVER_DIR/in
+				chmod 755 $outfile
+				break;break;
+			else
+				if [ "$char" != '@' ]; then
+					if [ "$user" == "$name" ]; then
+							echo "$text" >> $outfile
+					fi
+				fi
+			fi
+		done
+	else
+		echo "Unauthorized."
+	fi
+fi

@@ -1,0 +1,165 @@
+runServer () {
+	if [[ $debug -eq 1 ]]; then echo "Starting runServer for $channel"; fi
+	sleep $lockout_time
+
+	iiproc="$(ps axo command | grep ii | grep $server | grep $bot_nick)"
+	if [ -z "$iiproc" ]; then
+		if [[ $debug -eq 1 ]]; then echo "ii : Starting client for $server for $channel"; fi
+		killall tail
+		exec $bin_dir/ii -i $iifs_dir -s $server -n $bot_nick -f $bot_nick &
+		sleep 5
+		
+		iiproc=$(ps axo command | grep ii | grep $server | grep $bot_nick)
+		if [ -z "$iiproc" ]; then
+			if [[ $debug -eq 1 ]]; then echo "ii : Failed starting $server for $channel"; fi
+			killServer
+		else
+			if [[ $debug -eq 1 ]]; then echo "ii : Done starting $server for $channel"; fi
+		fi
+	fi
+}
+
+killServer () {
+	if [[ $debug -eq 1 ]]; then echo "ii : Starting killServer for $channel"; fi
+	for pid in $(ps axo pid o command | grep ii | grep "s $server" | grep $bot_nick | awk '{print $1}'); do kill $pid; done
+}
+
+runBot () {
+	if [[ $debug -eq 1 ]]; then echo "ii : Starting runBot for $channel"; fi
+	echo "/j $channel" > $iifs_dir/$server/in
+	sleep 1
+	
+	tail -n 1 -f $CHAN/out | while read sline; do  
+		name=$(echo "$sline" | cut -f 3 -d ' ' | sed 's,<\(.*\)>,\1,')
+		cmd=$(echo "$sline" | cut -f 4 -d ' ')
+		char=${cmd:0:1}
+		cmd=${cmd:1}
+		args=$(echo "$sline" | cut -f 5- -d ' ')
+		curtime=$(date | awk "{ string=\$4; split(string, a, \":\"); print a[1] a[2] int(a[3]/$lockout_time)}")
+		cursec=$(date | awk "{ string=\$4; split(string, a, \":\"); print a[1] a[2] int(a[3])}")
+		
+		iiproc=$(ps axo command | grep ii | grep $server | grep $bot_nick)
+		if [ -z "$iiproc" ]; then break; fi
+		
+		if [ -a $tmp_dir/lastchat ]; then
+			lastchat=$(cat $tmp_dir/lastchat);
+		fi
+
+		if [ "$char" == '@' ]; then
+			if [ $lastchat -eq $cursec ]; then
+				cmd="filteredcommand"
+				response="/"
+			else
+				echo "$cursec" > $tmp_dir/lastchat
+			fi
+			
+			response=$(eval "echo $IIBOT_LANG_CMD_NOTFOUND")
+
+			if [ -a $tmp_dir/$name ]; then
+				lastcmd=$(cat $tmp_dir/$name);
+			else
+				lastcmd="oktime"
+			fi
+
+			IIBOT_FILTER_CMD=0
+			#echo "$IIBOT_BADWORDS" | tr '\ ' '\n' | while read badword; do
+			for badword in $IIBOT_BADWORDS; do
+				if [[ "$args" =~ "$badword" ]]; then 
+					IIBOT_FILTER_CMD=1
+				fi
+			done
+
+			if [ $IIBOT_FILTER_CMD -eq 1 ]; then response=$(eval "echo $IIBOT_LANG_BADWORD_FILTER"); cmd="filteredcommand"; fi
+			
+			if [[ $debug -eq 1 ]]; then echo "$name - $char - $cmd - $args"; fi
+			
+		    	if [ "$lastcmd" != "$curtime" ]; then
+				for parent in builtin user by_nick; do
+					for folder in `ls $scripts_dir/$parent/`; do
+				    		if [ -x "$scripts_dir/$parent/$folder/$cmd" ]; then
+							exec=${folder##*/}
+							if [ -z "$exec" ]; then exec="$folder"; fi
+							if [ "$parent" == "by_nick" ]; then cmd="$cmd $name $CHAN"; fi
+							if [ "$exec" == "bash" ]; then exec="";	fi
+
+							echo "$curtime" > $tmp_dir/$name
+				    			response=$($exec $scripts_dir/$parent/$folder/$cmd $args)
+				    			break
+						fi
+					done
+				done
+				cmpresp=$(echo "$response" | tr -d ' ' | tr -d '\n' | tr -d '\r')
+				if [ -z "$cmpresp" ]; then response=$(eval "echo $IIBOT_LANG_CMD_NORESPONSE"); fi
+		    	else
+				thisbitch=$(date | awk "{ string=\$4; split(string, a, \":\"); print a[1] a[2] int(a[3]/10)}")
+				lastbitch=$(cat $tmp_dir/lastbitch);
+	    			if [ "$lastbitch" != "$thisbitch" ]; then
+	    				response=$(eval "echo $IIBOT_LANG_CMD_LOCKOUT")
+	    			else
+	    				response=""
+	    			fi
+				echo "$thisbitch" > $tmp_dir/lastbitch
+		    	fi
+			
+			#echo "$IIBOT_BADWORDS" | tr '\ ' '\n' | while read badword; do
+			for badword in $IIBOT_BADWORDS; do
+				if [[ "$response" =~ "$badword" ]]; then 
+					response=$(eval "echo $IIBOT_LANG_BADWORD_FILTER")
+				fi
+			done
+			
+			echo "$response" | while read line; do
+				if [ ${#line} -gt 450 ]; then response=$(eval "echo $IIBOT_LANG_RESPONSE_TOO_LONG"); fi
+			done
+
+			echo "$response" > $CHAN/in
+		fi
+	done
+}
+
+startBot () {
+	server=$1
+	channel=$2
+	lockout_time=$3
+	base_dir="$4"
+	tmp_dir="$5"
+	bot_nick="$6"
+	debug=0
+
+	bin_dir="$base_dir/bin"
+	iifs_dir="$base_dir/servers"
+	scripts_dir="$base_dir/scripts"
+	channels_dir="$base_dir/channels"
+	CHAN="$iifs_dir/$server/$channel"
+	IIBOT_TEMP_DIR="$tmp_dir"; export IIBOT_TEMP_DIR
+	IIBOT_IIFS_DIR="$iifs_dir"; export IIBOT_IIFS_DIR
+	IIBOT_SCRIPT_DIR="$base_dir/scripts"; export IIBOT_SCRIPT_DIR
+	IIBOT_IIFS_SERVER_DIR="$iifs_dir/$server"; export IIBOT_IIFS_SERVER_DIR
+	
+	if [[ $debug -eq 1 ]]; then echo "ii : Starting Main Loop for $channel"; fi
+	while true; do
+		runServer
+
+		while true; do
+			tailproc="$(ps axo command | grep tail | grep 'n 1 -f' | grep $CHAN)"
+			if [ -n "$tailproc" ]; then
+				if [[ $debug -eq 1 ]]; then echo "ii : Killing old Tails for $channel"; fi
+				for pid in $(ps axo pid o command | grep tail | grep "n 1 -f" | grep $CHAN | awk '{print $1}'); do kill $pid; done
+				for pid in $(ps axo pid o command | grep /bin/bash | grep $CHAN | awk '{print $1}'); do kill $pid; done
+				sleep 1
+				if [[ $debug -eq 1 ]]; then echo "ii : Done killing Tails for $channel"; fi
+			fi
+
+			runBot
+			iiproc="$(ps axo command | grep ii | grep $server | grep $bot_nick)"
+			if [ -z "$iiproc" ]; then break; fi
+		done
+	done
+}
+
+stopBot () {
+	killServer
+	for pid in $(ps axo pid o command | grep tail | grep "n 1 -f" | grep $CHAN | awk '{print $1}'); do kill $pid; done
+	if [[ $debug -eq 1 ]]; then echo "ii : Stopped ii server for $server and all scripts for $channel"; fi
+	for pid in $(ps axo pid o command | grep /bin/bash | grep $CHAN | awk '{print $1}'); do kill $pid; done
+}

@@ -1,0 +1,40 @@
+Project Goals : To provide..
+	developers with a quick & simple gateway for testing new code, unfamiliar functions, and general experimentation
+	a teaching & collaboration aid to demonstrate and/or test code in a live, shared environment
+	a simple method of developing that code into a reusable script that can be referenced to or expanded on later
+	plain text access to existing code objects of any language via a minimalist script
+	a facility for end users to run these scripts via 'friendly' methods (irc, webpage, web applets, local application)
+
+
+Planned Commands: 	Webservice call, Rss fetch, Regexp, SQL Query (various dbs)
+Planned Languages: 	Perl, ASP, Javascript, SQL, Lua, Compiled language support (C, Java, etc)
+
+Todo : (current task list)
+	system file execution protection
+	system file read/write protection
+	runaway process detection
+	proper chroot support (but not relied upon)
+	private message interface support (public)
+	centralized configuration
+	better language support
+	fix the LOCKOUT_TIME hack
+
+
+Future : (possiblities brainstorm)
+	reorganize scripts folder to handle more languages in a logical way
+	recode core logic in a 'real' language :P
+	cross-platform support
+	support calling scripts from scripts (cross-language)
+	Microsoft .NET language support
+	global user defined script includes
+	user database with privileges & permissions
+	use/encourage a more object-oriented approach in the user scripts
+	standardized script format with automatic help and defined arguments (i'm thinking 1-2 optional comment lines at the start)
+	secure web interface to manage scripts & configuration
+	recode bot for different interfaces  - 	direct tcp socket
+						execute from shell
+						webserver (http://my.url/?cmd=whois&args=www.google.com)
+						windows run dialog (via remote server)
+						HTML clickable interface (connect a user script to a non-literate user)
+	shared database for all languages & all scripts for user data (automatically connected before the script is run)
+	More languages & scripts!

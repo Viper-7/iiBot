@@ -1,0 +1,50 @@
+#!/bin/bash
+
+#================================
+#  \/  iiBot channel config  \/  
+#================================
+
+BOT_NICK="Druss"
+
+IIBOT_DIR="/opt/ii"
+TEMP_DIR="/opt/ii/tmp"
+
+SERVER="irc.gamesurge.net"
+CHANNEL="codeworkshop"
+LOCKOUT_TIME="4"
+
+IIBOT_BADWORDS="rm mail lemonparty etc proc sys passwd kick while for"
+IIBOT_LANG_CMD_LOCKOUT="STOP SPAMMING ME \$name"
+IIBOT_LANG_CMD_NOTFOUND="Huh? @help for help"
+IIBOT_LANG_CMD_NORESPONSE="No Output"
+IIBOT_LANG_RESPONSE_TOO_LONG="Response too long"
+IIBOT_LANG_BADWORD_FILTER="zzz... Please dont do that"
+
+#================================
+#  /\  iiBot Channel config  /\  
+#================================
+
+
+
+
+
+
+
+export IIBOT_DIR
+export IIBOT_BADWORDS
+export IIBOT_LANG_CMD_LOCKOUT
+export IIBOT_LANG_CMD_NOTFOUND
+export IIBOT_LANG_CMD_NORESPONSE
+export IIBOT_LANG_RESPONSE_TOO_LONG
+export IIBOT_LANG_BADWORD_FILTER
+
+. $IIBOT_DIR/scripts/runBot
+if [ "$1" == "stop" ]; then
+	stopBot $SERVER \#$CHANNEL $LOCKOUT_TIME $IIBOT_DIR $TEMP_DIR $BOT_NICK
+elif [ "$1" == "restart" ]; then
+	stopBot $SERVER \#$CHANNEL $LOCKOUT_TIME $IIBOT_DIR $TEMP_DIR $BOT_NICK
+	sleep 1
+	startBot $SERVER \#$CHANNEL $LOCKOUT_TIME $IIBOT_DIR $TEMP_DIR $BOT_NICK
+else
+	startBot $SERVER \#$CHANNEL $LOCKOUT_TIME $IIBOT_DIR $TEMP_DIR $BOT_NICK
+fi

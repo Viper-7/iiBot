@@ -1,0 +1,77 @@
+				=============================
+				= iiBot 0.3 Beta By Viper-7 =
+		    		=     viper7@viper-7.com    =
+				=============================
+
+
+iiBot is a bash interface to the ii IRC client from http://www.suckless.org/programs/ii.html
+
+This script was coded as a means for me and a few friends to learn more about a few languages,
+including bash, php, ruby & python. The basic premise is quite simple; Drop a script into the 
+scripts/user/<lang> folder in the language of your choice, and start using the command in IRC.
+
+The interface is designed to facilitate rapid testing of code, in an environment as close to 
+the natural language format as possible. Scripts placed in the <lang> folders are executed 
+in exactly the same way a cgi webserver or crontab would. So the code you write will work as
+it is, with no changes, on a live webserver. The modules created for this bot make perfect 
+functions to drop straight into production systems.
+
+There is no database used, instead a temp folder is specified in each channel's config. This 
+folder is used to track a timestamp of when the a user last ran a command (for the spam filter),
+and for some temp space for some of the more elaborate languages (ie brainfuck). This folder 
+does not need to be unique, but it may help for busy channels. All configuration is done in the 
+scripts in the channel folder. No other scripts should need to be changed.
+
+All built-in commands are documented, type @help to get a list (dynamically updated) then type
+a command with no parameters to check it's syntax. One of the only standards for scripts
+written for the bot, is to display usage information if called with no parameters.
+
+There are a few built in interpreters (@calc, @php, @ruby & @brainfuck), these will take one
+line of standard code passed as a parameter. They always take care of any headers or opening
+structures required, just run whatever function or code you want (ie: @php $a=1;$b=2;echo $a+$b)
+The only caveat is all backslashes must be escaped, so you must double up any \'s in your code.
+This does not affect scripts, only code typed through IRC.
+
+You can also create scripts directly from IRC. Type @make<lang> <command> to start capturing
+your text in the channel, into your new command. Finish with a # on an empty line. Scripts 
+created in this manner must have all headers or opening tags included (ie <?php & ?>). The 
+same rules apply for escaping \'s (Double them up).
+
+I'll be adding more languages as I go, hopefully far far more than are currently supported.
+
+Stay Tuned :)
+
+
+
+===========================
+== !! IMPORTANT NOTES !! ==
+===========================
+
+The script should always be started as an unprivileged user (ie "sudo -u www-data ./iiBot")
+
+Spam protection is provided by LOCKOUT_TIME; the minimum time between commands in seconds. 
+
+The LOCKOUT_TIME value is also used to avoid having 2 channels both try to start the ii
+server at the same time. For this reason please set LOCKOUT_TIME to a unique value for each
+channel!
+
+Everything except this file should have execute permissions for the user that will be 
+running the server. The scripts/user and tmp folders should also have write permission.
+
+When starting the script, you may see a few lines of "Kill: No such process". This is not a 
+problem, and you can safely ignore these messages.
+
+The script will work in init.d and supports the following syntax:
+	"./iiBot stop" 		Will end all configured bot scripts & ii servers
+	"./iiBot restart" 	Will restart all configured bot scripts & ii servers
+	"./iiBot" 		Will start any ii servers not started, then stop & start all
+				configured bot scripts
+
+If ii is hung and not connected to a server, you can kill the ii server process ("killall ii") 
+and the script will automatically restart it
+
+
+Dependencies: bash php5-cli ruby python tcl8.4 psmisc(killall) 
+
+
+
